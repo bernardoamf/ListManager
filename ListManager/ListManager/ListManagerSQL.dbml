@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?><Database Name="ListManager" Class="ListManagerSQLDataContext" xmlns="http://schemas.microsoft.com/linqtosql/dbml/2007">
+  <Connection Mode="AppSettings" ConnectionString="Data Source=(local);Initial Catalog=ListManager;Persist Security Info=True;User ID=sa" SettingsObjectName="ListManager.Properties.Settings" SettingsPropertyName="ListManagerConnectionString2" Provider="System.Data.SqlClient" />
+  <Table Name="dbo.Email" Member="Emails">
+    <Type Name="Email">
+      <Column Name="emailId" Type="System.Int32" DbType="Int NOT NULL IDENTITY" IsPrimaryKey="true" IsDbGenerated="true" CanBeNull="false" />
+      <Column Name="emailAddress" Type="System.String" DbType="NVarChar(255)" CanBeNull="true" />
+    </Type>
+  </Table>
+</Database>
