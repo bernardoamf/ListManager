@@ -15,6 +15,7 @@ namespace ListManager
         public Form1()
         {
             InitializeComponent();
+            textBoxFileName.Text = @"C:\Temp\EnrollmentsReport.csv";
         }
         private void buttonSelectFileList_Click(object sender, EventArgs e)
         {
@@ -48,9 +49,12 @@ namespace ListManager
 
         private void button2_Click(object sender, EventArgs e)
         {
-            ListManagerSQLDataContext dc = new ListManagerSQLDataContext();
-            var q = from em in dc.Emails select em.emailAddress;
-            textBox1.Text = q.FirstOrDefault().ToString();
+            
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            FileOperations.ReadYears2(textBoxFileName.Text);
         }
     }
 }
