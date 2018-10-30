@@ -33,5 +33,7 @@ namespace ListManager.ListManagerSQL
             return semesterYear.SemesterYearId;
         }
     }
+
+
     
 }

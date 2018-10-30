@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -67,27 +68,135 @@ namespace ListManager
             var CSVList = lines.Skip(1)
                             .Select(r => r)
                             .Take(10);
+            
+            //Initialiaze all the lists
+            List<Account> Accounts = new List<Account>();
+            List<Class> Classes = new List<Class>();
+            List<Contact> Contacts = new List<Contact>();
+            List<Email> Emails = new List<Email>();
+            List<Enrollment> Enrollments = new List<Enrollment>();
+            List<Location> Locations = new List<Location>();
+            List<Semester> Semesters = new List<Semester>();
+            List<SemesterYear> SemesterYears = new List<SemesterYear>();
+            List<SemesterName> SemesterNames = new List<SemesterName>();
+            List<Student> Students = new List<Student>();
+            List<Teacher> Teachers = new List<Teacher>();
 
-            List<SemesterYear> YearList = new List<SemesterYear>();
-            string value;
-            SemesterYear semesterYear = new SemesterYear();
-            int year;
-            string semesterName;
+            //Initialize all the helpers
+            Email email;
+            Contact contact;
+            Student student;
+            Account account;
+            Enrollment enrollment;
+            Location location;
+            Semester semester;
+            SemesterName semesterName;
+            SemesterYear semesterYear;
+            Class classDBElement;
+            Teacher teacher;
+
+            int semesterYearHelper;
+            string semesterNameHelper;
+            string semesterHelper;
+            string semesterIdHelper;
+            int semesterSpaceIndex;
+            DateTime _dateTime;
+
+
+            //Iterate through the list
             foreach (var r in CSVList)
             {
-                value = r[ColumIndex.semesterName].ToString().Replace(@"""", "");
-                Debug.WriteLine("RowValue: " + value);
-                semesterName = value.Split(' ')[0];
-                Int32.TryParse(value.Split(' ')[1], out year);
+                //Add to SemesterName and SemesterYear and Semester
+                //Clean the semester data
+                semesterHelper = r[ColumIndex.semesterName].ToString().Replace(@"""", "");
+                semesterSpaceIndex = semesterHelper.IndexOf(" ");
+                if (semesterHelper.IndexOf(" ",semesterSpaceIndex + 1) != -1)
+                    semesterHelper = semesterHelper.Substring(0, semesterHelper.IndexOf(" ", semesterSpaceIndex + 1)).Trim();
+                Debug.WriteLine("RowValue: " + semesterHelper);
+                if (Int32.TryParse(semesterHelper.Split(' ')[1], out semesterYearHelper))
+                {
+                    semesterNameHelper = semesterHelper.Split(' ')[0];
+                    semesterIdHelper = semesterHelper.Replace(' ', '_');
+                }
+                else 
+                {
+                    semesterNameHelper = semesterHelper.Split(' ')[0];
+                    semesterIdHelper = semesterHelper.Split(' ')[0];
+                }
+                //Add to SemesterName
+                semesterName = new SemesterName();
+                semesterName.SemesterNameId = semesterNameHelper;
+                SemesterNames.Add(semesterName);
+                //Add to SemesterYear
                 semesterYear = new SemesterYear();
+                semesterYear.SemesterYearId = semesterYearHelper;
+                SemesterYears.Add(semesterYear);
+                //Add to Semester
+                semester = new Semester();
+                semester.SemesterId = semesterIdHelper;
+                Semesters.Add(semester);
+
+                //Add to email List
+                email = new Email();
+                email.Email1 = r[ColumIndex.contact_email];
+                Emails.Add(email);
+
+                //Add to Contact List
+                contact = new Contact();
+                contact.FirstName = r[ColumIndex.contact_first_name];
+                contact.LastName = r[ColumIndex.contact_last_name];
+                Contacts.Add(contact);
+
+                //Add to Student
+                student = new Student();
+                student.StudentId = Convert.ToInt32(r[ColumIndex.student_id]);
+                student.FirstName = r[ColumIndex.student_first_name];
+                student.LastName = r[ColumIndex.student_last_name];
+                if (DateTime.TryParse(r[ColumIndex.student_date_of_birth], out _dateTime))
+                    student.BirthDate = _dateTime;
+                Students.Add(student);
+
+                //Add to Accounts
+                account = new Account();
+                account.AccountId = Convert.ToInt32(r[ColumIndex.account_id]);
+                if (r[ColumIndex.account_new_status].ToString() == "Yes")
+                    account.CreatedSemesterId = r[ColumIndex.account_new_status].ToString().Replace(' ', '_');
+                Accounts.Add(account);
+
+                //Add to Enrollment
+                enrollment = new Enrollment();
+                enrollment.EnrollmentId = Convert.ToInt32(r[ColumIndex.enr_id]);
+                if (DateTime.TryParse(r[ColumIndex.created], out _dateTime))
+                    enrollment.CreateDate = _dateTime;
+                enrollment.SemesterId = account.CreatedSemesterId = r[ColumIndex.account_new_status].ToString().Replace(' ', '_');
+                Enrollments.Add(enrollment);
+
+                //Add to Location
+                location = new Location();
+                location.Name = r[ColumIndex.class_location];
+                Locations.Add(location);
+
+                //Add to Class
+                classDBElement = new Class();
+                classDBElement.Time = DateTime.ParseExact(r[ColumIndex.class_time], "HH:mm:ss", CultureInfo.InvariantCulture).ToString("hh:mm:ss");
+                classDBElement.DayOfWeek = r[ColumIndex.class_day_of_week];
+                Classes.Add(classDBElement);
+
+                //Add to Teachers
+                teacher = new Teacher();
+                teacher.Name = r[ColumIndex.class_teacher];
+                Teachers.Add(teacher);
+
+              /*  semesterYear = new SemesterYear();
                 semesterYear.SemesterYearId = year;
                 YearList.Add(semesterYear);
                 //year = r[ColumIndex.semesterYear].ToString().Split(' ')[1]
                 Debug.WriteLine("SemesterName: " + semesterName);
-                Debug.WriteLine("SemesterYear: " + year.ToString());
+                Debug.WriteLine("SemesterYear: " + year.ToString());*/
             }
+
             //Remove the duplicates
-            var YearListDistinct = YearList.Distinct(new SemesterYearComparer());
+            var YearListDistinct = SemesterYears.Distinct(new SemesterYearComparer());
             
             //Get the list of years
 

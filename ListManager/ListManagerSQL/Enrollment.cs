@@ -18,5 +18,32 @@ namespace ListManager.ListManagerSQL
 
         [StringLength(50)]
         public string SemesterId { get; set; }
+
+        public int? AccountId { get; set; }
+    }
+
+    class EnrollmentComparer : IEqualityComparer<Enrollment>
+    {
+        public bool Equals(Enrollment e1, Enrollment e2)
+        {
+            if (e1 == null && e2 == null)
+                return true;
+            else if (e1 == null || e2 == null)
+                return false;
+            else if (e1.EnrollmentId == e2.EnrollmentId
+                        && e1.CreateDate == e2.CreateDate
+                        && e1.StudentId == e2.StudentId
+                        && e1.SemesterId == e2.SemesterId
+                        && e1.AccountId == e2.AccountId)
+                return true;
+            else
+                return false;
+        }
+
+        public int GetHashCode(Enrollment e1)
+        {
+            // int hCode = semesterYear.SemesterYearId;
+            return e1.EnrollmentId;
+        }
     }
 }
