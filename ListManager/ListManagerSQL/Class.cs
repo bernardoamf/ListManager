@@ -11,7 +11,7 @@ namespace ListManager.ListManagerSQL
     {
         public int ClassId { get; set; }
 
-        [StringLength(255)]
+        [StringLength(20)]
         public string SemesterId { get; set; }
 
         public int? LocationId { get; set; }
@@ -19,8 +19,25 @@ namespace ListManager.ListManagerSQL
         [StringLength(9)]
         public string DayOfWeek { get; set; }
 
-        [StringLength(9)]
+        [StringLength(30)]
         public string Time { get; set; }
+
+        public int? TeacherId { get; set; }
+    }
+
+    public partial class ClassHelper
+    {
+        public int ClassId { get; set; }
+
+        public string SemesterId { get; set; }
+
+        public string LocationName { get; set; }
+
+        public string DayOfWeek { get; set; }
+
+        public string Time { get; set; }
+
+        public string TeacherName { get; set; }
     }
 
     class ClassComparer : IEqualityComparer<Class>
@@ -34,7 +51,8 @@ namespace ListManager.ListManagerSQL
             else if (e1.SemesterId == e2.SemesterId
                         && e1.LocationId == e2.LocationId
                         && e1.DayOfWeek == e2.DayOfWeek
-                        && e1.Time == e2.Time)
+                        && e1.Time == e2.Time
+                        && e1.TeacherId == e2.TeacherId)
                 return true;
             else
                 return false;
@@ -44,6 +62,31 @@ namespace ListManager.ListManagerSQL
         {
             // int hCode = semesterYear.SemesterYearId;
             return (e1.SemesterId + e1.LocationId + e1.DayOfWeek + e1.Time).GetHashCode();
+        }
+    }
+
+    class ClassHelperComparer : IEqualityComparer<ClassHelper>
+    {
+        public bool Equals(ClassHelper e1, ClassHelper e2)
+        {
+            if (e1 == null && e2 == null)
+                return true;
+            else if (e1 == null || e2 == null)
+                return false;
+            else if (e1.SemesterId == e2.SemesterId
+                        && e1.LocationName == e2.LocationName
+                        && e1.DayOfWeek == e2.DayOfWeek
+                        && e1.Time == e2.Time
+                        && e1.TeacherName == e2.TeacherName)
+                return true;
+            else
+                return false;
+        }
+
+        public int GetHashCode(ClassHelper e1)
+        {
+            // int hCode = semesterYear.SemesterYearId;
+            return (e1.SemesterId + e1.LocationName + e1.DayOfWeek + e1.Time + e1.TeacherName).GetHashCode();
         }
     }
 }

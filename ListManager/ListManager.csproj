@@ -65,7 +65,6 @@
     </Compile>
     <Compile Include="ListManagerSQL\Account.cs" />
     <Compile Include="ListManagerSQL\Class.cs" />
-    <Compile Include="ListManagerSQL\Class2.cs" />
     <Compile Include="ListManagerSQL\Email.cs" />
     <Compile Include="ListManagerSQL\Enrollment.cs" />
     <Compile Include="ListManagerSQL\LisManagerADO.cs" />
@@ -75,16 +74,7 @@
     <Compile Include="ListManagerSQL\SemesterYear.cs" />
     <Compile Include="ListManagerSQL\Student.cs" />
     <Compile Include="ListManagerSQL\Teacher.cs" />
-    <Compile Include="ListManagerSQL\Teacher2.cs" />
-    <Compile Include="ListManagerSQL\Student2.cs" />
-    <Compile Include="ListManagerSQL\SemesterYear2.cs" />
-    <Compile Include="ListManagerSQL\SemesterName2.cs" />
-    <Compile Include="ListManagerSQL\Semester2.cs" />
-    <Compile Include="ListManagerSQL\Location2.cs" />
-    <Compile Include="ListManagerSQL\Enrollment2.cs" />
-    <Compile Include="ListManagerSQL\Email2.cs" />
     <Compile Include="ListManagerSQL\Contact.cs" />
-    <Compile Include="ListManagerSQL\Account2.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">
