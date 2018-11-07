@@ -70,23 +70,26 @@ namespace ListManager
                             .Take(10);
             
             //Initialiaze all the lists
-            List<Account> Accounts = new List<Account>();
+            List<AccountHelper> AccountsHelper = new List<AccountHelper>();
             List<ClassHelper> Classes = new List<ClassHelper>();
-            List<Contact> Contacts = new List<Contact>();
+            List<ContactHelper> ContactsHelper = new List<ContactHelper>();
             List<Email> Emails = new List<Email>();
             List<Enrollment> Enrollments = new List<Enrollment>();
             List<Location> Locations = new List<Location>();
             List<Semester> Semesters = new List<Semester>();
             List<SemesterYear> SemesterYears = new List<SemesterYear>();
             List<SemesterName> SemesterNames = new List<SemesterName>();
-            List<Student> Students = new List<Student>();
+            List<StudentHelper> StudentsHelper = new List<StudentHelper>();
             List<Teacher> Teachers = new List<Teacher>();
 
             //Initialize all the helpers
             Email email;
+            ContactHelper contactHelper;
             Contact contact;
             Student student;
+            StudentHelper studentHelper;
             Account account;
+            AccountHelper accountHelper;
             Enrollment enrollment;
             Location location;
             Semester semester;
@@ -143,53 +146,60 @@ namespace ListManager
                 Emails.Add(email);
 
                 //Add to Contact List
-                contact = new Contact();
-                contact.FirstName = r[ColumIndex.contact_first_name];
-                contact.LastName = r[ColumIndex.contact_last_name];
-                Contacts.Add(contact);
+                contactHelper = new ContactHelper();
+                contactHelper.FirstName = r[ColumIndex.contact_first_name];
+                contactHelper.LastName = r[ColumIndex.contact_last_name];
+                contactHelper.Email = email.Email1;
+                ContactsHelper.Add(contactHelper);
 
                 //Add to Student
-                student = new Student();
-                student.StudentId = Convert.ToInt32(r[ColumIndex.student_id]);
-                student.FirstName = r[ColumIndex.student_first_name];
-                student.LastName = r[ColumIndex.student_last_name];
+                studentHelper = new StudentHelper();
+                studentHelper.StudentId = Convert.ToInt32(r[ColumIndex.student_id]);
+                studentHelper.FirstName = r[ColumIndex.student_first_name];
+                studentHelper.LastName = r[ColumIndex.student_last_name];
                 if (DateTime.TryParse(r[ColumIndex.student_date_of_birth], out _dateTime))
-                    student.BirthDate = _dateTime;
-                Students.Add(student);
+                    studentHelper.BirthDate = _dateTime;
+                studentHelper.ContactFirstName = contactHelper.FirstName;
+                studentHelper.ContactLastName = contactHelper.LastName;
+                studentHelper.ContactEmail = email.Email1;
+                StudentsHelper.Add(studentHelper);
 
                 //Add to Accounts
-                account = new Account();
-                account.AccountId = Convert.ToInt32(r[ColumIndex.account_id]);
+                accountHelper = new AccountHelper();
+                accountHelper.AccountId = Convert.ToInt32(r[ColumIndex.account_id]);
                 if (r[ColumIndex.account_new_status].ToString() == "Yes")
-                    account.CreatedSemesterId = r[ColumIndex.account_new_status].ToString().Replace(' ', '_');
-                Accounts.Add(account);
+                    accountHelper.CreatedSemesterId = semester.SemesterId;
+                accountHelper.ContactEmail = email.Email1;
+                accountHelper.ContactFirstName = contactHelper.FirstName;
+                accountHelper.ContactLastName = contactHelper.LastName;
+                AccountsHelper.Add(accountHelper);
 
                 //Add to Enrollment
                 enrollment = new Enrollment();
                 enrollment.EnrollmentId = Convert.ToInt32(r[ColumIndex.enr_id]);
                 if (DateTime.TryParse(r[ColumIndex.created], out _dateTime))
                     enrollment.CreateDate = _dateTime;
-                enrollment.SemesterId = account.CreatedSemesterId = r[ColumIndex.account_new_status].ToString().Replace(' ', '_');
+                enrollment.SemesterId = accountHelper.CreatedSemesterId = r[ColumIndex.account_new_status].ToString().Replace(' ', '_');
                 Enrollments.Add(enrollment);
 
                 //Add to Location
                 location = new Location();
-                location.Name = r[ColumIndex.class_location];
+                location.Name = r[ColumIndex.class_location].Replace(@"""", "").Trim();
                 Locations.Add(location);
+
+                //Add to Teachers
+                teacher = new Teacher();
+                teacher.Name = r[ColumIndex.class_teacher].Replace(@"""", "").Trim(); ;
+                Teachers.Add(teacher);
 
                 //Add to Class
                 classHelper = new ClassHelper();
                 classHelper.Time = r[ColumIndex.class_time].ToString();
                 classHelper.DayOfWeek = r[ColumIndex.class_day_of_week];
-                classHelper.LocationName = r[ColumIndex.class_location];
-                classHelper.TeacherName = r[ColumIndex.class_teacher].Replace(@"""", "");
+                classHelper.LocationName = location.Name;
+                classHelper.TeacherName = teacher.Name;
                 classHelper.SemesterId = semesterIdHelper;
                 Classes.Add(classHelper);
-
-                //Add to Teachers
-                teacher = new Teacher();
-                teacher.Name = r[ColumIndex.class_teacher].Replace(@"""", ""); ;
-                Teachers.Add(teacher);
 
               /*  semesterYear = new SemesterYear();
                 semesterYear.SemesterYearId = year;
@@ -203,15 +213,13 @@ namespace ListManager
             var SemesterNamesDistinct = SemesterNames.Distinct(new SemesterNameComparer());
             var SemestersDistinct = Semesters.Distinct(new SemesterComparer());
             var EmailsDistinct = Emails.Distinct(new EmailComparer());
-            var ContactsDistinct = Contacts.Distinct(new ContactComparer());
-            var StudentsDistinct = Students.Distinct(new StudentComparer());
-            var AccountsDistinct = Accounts.Distinct(new AccountComparer());
+            var ContactsHelperDistinct = ContactsHelper.Distinct(new ContactHelperComparer());
+            var StudentsHelperDistinct = StudentsHelper.Distinct(new StudentHelperComparer());
+            var AccountsHelperDistinct = AccountsHelper.Distinct(new AccountHelperComparer());
             var EnrollmentsDistinct = Enrollments.Distinct(new EnrollmentComparer());
             var LocationsDistinct = Locations.Distinct(new LocationComparer());
             var ClassesDistinct = Classes.Distinct(new ClassHelperComparer());
             var TeachersDistinct = Teachers.Distinct(new TeacherComparer());
-
-            //Get the list of years
 
             using (LisManagerADO db = new LisManagerADO())
             {
@@ -273,12 +281,10 @@ namespace ListManager
                     classDBHelper.DayOfWeek = e.DayOfWeek;
                     classDBHelper.Time = e.Time;
                     classDBHelper.SemesterId = e.SemesterId;
-                    classDBHelper.LocationId = Convert.ToInt32((from l in LocationsDistinct where l.Name == e.LocationName select l.LocationId).First());
-                    classDBHelper.TeacherId = Convert.ToInt32((from t in TeachersDistinct where t.Name == e.TeacherName select t.TeacherId).First());
-                    Debug.WriteLine(String.Format("Classes itemValue: {0} {1} {2} {3} {4} {5}", classDBHelper.ClassId, classDBHelper.LocationId, classDBHelper.SemesterId
-                                                                                                    , classDBHelper.Time, classDBHelper.DayOfWeek, classDBHelper.TeacherId));
+                    classDBHelper.LocationId = Convert.ToInt32((from l in db.Locations where l.Name == e.LocationName select l.LocationId).First());
+                    classDBHelper.TeacherId = Convert.ToInt32((from t in db.Teachers where t.Name.ToString() == e.TeacherName.ToString() select t.TeacherId).First());
+                    Debug.WriteLine(String.Format("Classes itemValue: {0} {1} {2} {3} {4} {5}", classDBHelper.ClassId, classDBHelper.LocationId, classDBHelper.SemesterId                                                                                                   , classDBHelper.Time, classDBHelper.DayOfWeek, classDBHelper.TeacherId));
                     db.Classes.AddIfNotExists(classDBHelper, x => classDBHelper.ClassId == classDBHelper.ClassId);
-                    //db.SemesterYears.Add(sm);
                 }
                 db.SaveChanges();
 
@@ -286,41 +292,52 @@ namespace ListManager
                 Debug.WriteLine("Number of items in the list: " + EmailsDistinct.Count().ToString());
                 foreach (Email e in EmailsDistinct)
                 {
-                    Debug.WriteLine(String.Format("Teacher itemValue: {0} {1}", e.EmailId, e.Email1));
-                    //db.SemesterYears.AddIfNotExists(sm, x => x.SemesterYearId == sm.SemesterYearId);
-                    //db.SemesterYears.Add(sm);
+                    Debug.WriteLine(String.Format("email itemValue: {0} {1}", e.EmailId, e.Email1));
+                    db.Emails.AddIfNotExists(e, x => x.Email1 == e.Email1);
                 }
-                //db.SaveChanges();
+                db.SaveChanges();
 
                 //Process Contact
-                Debug.WriteLine("Number of items in the list: " + ContactsDistinct.Count().ToString());
-                foreach (Contact e in ContactsDistinct)
+                Debug.WriteLine("Number of items in the list: " + ContactsHelperDistinct.Count().ToString());
+                foreach (ContactHelper c in ContactsHelperDistinct)
                 {
-                    Debug.WriteLine(String.Format("Contact itemValue: {0} {1} {2} {3}", e.ContactId, e.EmailId, e.FirstName, e.LastName));
-                    //db.SemesterYears.AddIfNotExists(sm, x => x.SemesterYearId == sm.SemesterYearId);
+                    contact = new Contact();
+                    contact.FirstName = c.FirstName;
+                    contact.LastName = c.LastName;
+                    Debug.WriteLine(String.Format("Contact itemValue: {0} {1} {2} {3}", contact.ContactId, contact.EmailId, contact.FirstName, contact.LastName));
+                    db.Contacts.AddIfNotExists(contact, x => x.FirstName == contact.FirstName && x.LastName == contact.LastName && contact.EmailId == contact.EmailId);
                     //db.SemesterYears.Add(sm);
                 }
-                //db.SaveChanges();
+                db.SaveChanges();
 
                 //Process Account
-                Debug.WriteLine("Number of items in the list: " + AccountsDistinct.Count().ToString());
-                foreach (Account e in AccountsDistinct)
+                Debug.WriteLine("Number of items in the list: " + AccountsHelperDistinct.Count().ToString());
+                foreach (AccountHelper a in AccountsHelperDistinct)
                 {
-                    Debug.WriteLine(String.Format("Account itemValue: {0} {1} {2}", e.AccountId, e.ContactId, e.CreatedSemesterId));
-                    //db.SemesterYears.AddIfNotExists(sm, x => x.SemesterYearId == sm.SemesterYearId);
-                    //db.SemesterYears.Add(sm);
+                    a.ContactEmailId = Convert.ToInt32((from e in db.Emails where e.Email1.ToString() == a.ContactEmail.ToString() select e.EmailId).First());
+                    account = new Account();
+                    account.AccountId = a.AccountId;
+                    account.ContactId = Convert.ToInt32((from c in db.Contacts where c.FirstName == a.ContactFirstName && c.LastName == a.ContactLastName && c.EmailId == a.ContactEmailId select c.ContactId).First());
+                    Debug.WriteLine(String.Format("Account itemValue: {0} {1} {2}", account.AccountId, account.ContactId, account.CreatedSemesterId));
+                    db.Accounts.AddIfNotExists(account, x => x.AccountId == account.AccountId);
                 }
-                //db.SaveChanges();
+                db.SaveChanges();
 
                 //Process Student
-                Debug.WriteLine("Number of items in the list: " + StudentsDistinct.Count().ToString());
-                foreach (Student e in StudentsDistinct)
+                Debug.WriteLine("Number of items in the list: " + StudentsHelperDistinct.Count().ToString());
+                foreach (StudentHelper e in StudentsHelperDistinct)
                 {
-                    Debug.WriteLine(String.Format("Student itemValue: {0} {1} {2} {3} {4}", e.StudentId, e.FirstName, e.LastName, e.ContactId, e.BirthDate));
-                    //db.SemesterYears.AddIfNotExists(sm, x => x.SemesterYearId == sm.SemesterYearId);
-                    //db.SemesterYears.Add(sm);
+                    e.ContactEmailId = Convert.ToInt32((from em in db.Emails where em.Email1.ToString() == e.ContactEmail.ToString() select em.EmailId).First());
+                    student = new Student();
+                    student.StudentId = e.StudentId;
+                    student.FirstName = e.FirstName;
+                    student.LastName = e.LastName;
+                    student.BirthDate = e.BirthDate;
+                    student.ContactId = Convert.ToInt32((from c in db.Contacts where c.FirstName == e.ContactFirstName && c.LastName == e.ContactLastName && c.EmailId == e.ContactEmailId select c.ContactId).First());
+                    Debug.WriteLine(String.Format("Student itemValue: {0} {1} {2} {3} {4}", student.StudentId, student.FirstName, student.LastName, student.ContactId, student.BirthDate));
+                    db.Students.AddIfNotExists(student, x => x.StudentId == student.StudentId);
                 }
-                //db.SaveChanges();
+                db.SaveChanges();
 
                 //Process Enrollment
                 Debug.WriteLine("Number of items in the list: " + EnrollmentsDistinct.Count().ToString());
