@@ -9,6 +9,7 @@ namespace ListManager.ListManagerSQL
     [Table("Student")]
     public partial class Student
     {
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int StudentId { get; set; }
 
         [StringLength(255)]

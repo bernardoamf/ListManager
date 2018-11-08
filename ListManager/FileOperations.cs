@@ -167,7 +167,7 @@ namespace ListManager
                 //Add to Accounts
                 accountHelper = new AccountHelper();
                 accountHelper.AccountId = Convert.ToInt32(r[ColumIndex.account_id]);
-                if (r[ColumIndex.account_new_status].ToString() == "Yes")
+                if (r[ColumIndex.account_new_status].ToString().Replace(@"""", "") == "Yes")
                     accountHelper.CreatedSemesterId = semester.SemesterId;
                 accountHelper.ContactEmail = email.Email1;
                 accountHelper.ContactFirstName = contactHelper.FirstName;
@@ -177,9 +177,11 @@ namespace ListManager
                 //Add to Enrollment
                 enrollment = new Enrollment();
                 enrollment.EnrollmentId = Convert.ToInt32(r[ColumIndex.enr_id]);
-                if (DateTime.TryParse(r[ColumIndex.created], out _dateTime))
+                if (DateTime.TryParse(r[ColumIndex.created].ToString().Replace(@"""", ""), out _dateTime))
                     enrollment.CreateDate = _dateTime;
-                enrollment.SemesterId = accountHelper.CreatedSemesterId = r[ColumIndex.account_new_status].ToString().Replace(' ', '_');
+                enrollment.StudentId = studentHelper.StudentId;
+                enrollment.SemesterId = semester.SemesterId;
+                enrollment.AccountId = accountHelper.AccountId;                
                 Enrollments.Add(enrollment);
 
                 //Add to Location
@@ -317,6 +319,7 @@ namespace ListManager
                     a.ContactEmailId = Convert.ToInt32((from e in db.Emails where e.Email1.ToString() == a.ContactEmail.ToString() select e.EmailId).First());
                     account = new Account();
                     account.AccountId = a.AccountId;
+                    account.CreatedSemesterId = a.CreatedSemesterId;
                     account.ContactId = Convert.ToInt32((from c in db.Contacts where c.FirstName == a.ContactFirstName && c.LastName == a.ContactLastName && c.EmailId == a.ContactEmailId select c.ContactId).First());
                     Debug.WriteLine(String.Format("Account itemValue: {0} {1} {2}", account.AccountId, account.ContactId, account.CreatedSemesterId));
                     db.Accounts.AddIfNotExists(account, x => x.AccountId == account.AccountId);
@@ -335,6 +338,7 @@ namespace ListManager
                     student.BirthDate = e.BirthDate;
                     student.ContactId = Convert.ToInt32((from c in db.Contacts where c.FirstName == e.ContactFirstName && c.LastName == e.ContactLastName && c.EmailId == e.ContactEmailId select c.ContactId).First());
                     Debug.WriteLine(String.Format("Student itemValue: {0} {1} {2} {3} {4}", student.StudentId, student.FirstName, student.LastName, student.ContactId, student.BirthDate));
+                    //db.Students.Add(s1);
                     db.Students.AddIfNotExists(student, x => x.StudentId == student.StudentId);
                 }
                 db.SaveChanges();
@@ -344,10 +348,10 @@ namespace ListManager
                 foreach (Enrollment e in EnrollmentsDistinct)
                 {
                     Debug.WriteLine(String.Format("Enrollment itemValue: {0} {1} {2} {3} {4}", e.EnrollmentId, e.StudentId, e.SemesterId, e.AccountId, e.CreateDate));
-                    //db.SemesterYears.AddIfNotExists(sm, x => x.SemesterYearId == sm.SemesterYearId);
+                    db.Enrollments.AddIfNotExists(e, x => x.EnrollmentId == e.EnrollmentId);
                     //db.SemesterYears.Add(sm);
                 }
-                //db.SaveChanges();
+                db.SaveChanges();
 
                 Debug.WriteLine("Number of items in the list: " + SemesterYearsDistinct.Count().ToString());
                 /*
