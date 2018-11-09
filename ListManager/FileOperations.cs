@@ -8,56 +8,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ListManager.ListManagerSQL;
+using System.ComponentModel;
 
 namespace ListManager
 {
     class FileOperations
     {
 
-        public static List<int> ReadYears(string csv_file_path)
-        {
-            var lines = File.ReadAllLines(csv_file_path).Select(x => x.Split(','));
-            //Considering each line contains same no. of elements
-            string[] firstRow = lines.First();
-            CSVColumns ColumIndex = SetCSVColumns(firstRow);
-            //int lineLength = lines.First().Count();
-
-            var CSVList = lines.Skip(1)
-                            .Select(r => r)
-                            .Take(10);
-
-            List<int> YearList = new List<int>();
-            string value;
-            int year;
-            string semesterName;
-            foreach(var r in CSVList)
-            {
-                value = r[ColumIndex.semesterName].ToString().Replace(@"""", "");
-                Debug.WriteLine("RowValue: " + value);
-                semesterName = value.Split(' ')[0];
-                Int32.TryParse(value.Split(' ')[1], out year);
-                YearList.Add(year);
-                //year = r[ColumIndex.semesterYear].ToString().Split(' ')[1]
-                Debug.WriteLine("SemesterName: " + semesterName);
-                Debug.WriteLine("SemesterYear: " + year.ToString());
-            }
-            //Remove the duplicates
-            var YearListDistinct = YearList.Distinct();
-            Debug.WriteLine("Number of items in the list: " + YearListDistinct.Count().ToString());
-            /*
-             var CSV = lines.Skip(1)
-                       .SelectMany(x => x)
-                       .Select((v, i) => new { Value = v, Index = i % lineLength })
-                       .Where(x => x.Index == 2 || x.Index == 3)
-                       .Select(x => x.Value);
-            foreach (var data in CSV)
-            {
-                Console.WriteLine(data);
-            }*/
-            return new List<int>();
-        }
-
-        public static List<int> ReadYears2(string csv_file_path)
+        public static void UploadFile(string csv_file_path, BackgroundWorker worker)
         {
             var lines = File.ReadAllLines(csv_file_path).Select(x => x.Split(','));
             //Considering each line contains same no. of elements
@@ -105,8 +63,8 @@ namespace ListManager
             string semesterIdHelper;
             int semesterSpaceIndex;
             DateTime _dateTime;
-
-
+            int totalRecords = CSVList.Count() * 2;
+            double i = 0;
             //Iterate through the list
             foreach (var r in CSVList)
             {
@@ -203,12 +161,16 @@ namespace ListManager
                 classHelper.SemesterId = semesterIdHelper;
                 Classes.Add(classHelper);
 
-              /*  semesterYear = new SemesterYear();
-                semesterYear.SemesterYearId = year;
-                YearList.Add(semesterYear);
-                //year = r[ColumIndex.semesterYear].ToString().Split(' ')[1]
-                Debug.WriteLine("SemesterName: " + semesterName);
-                Debug.WriteLine("SemesterYear: " + year.ToString());*/
+                /*  semesterYear = new SemesterYear();
+                  semesterYear.SemesterYearId = year;
+                  YearList.Add(semesterYear);
+                  //year = r[ColumIndex.semesterYear].ToString().Split(' ')[1]
+                  Debug.WriteLine("SemesterName: " + semesterName);
+                  Debug.WriteLine("SemesterYear: " + year.ToString());*/
+
+                worker.ReportProgress(Convert.ToInt32(Math.Round(((100 / totalRecords) * i))));
+                System.Threading.Thread.Sleep(10);
+                i++;
             }
             //Remove the duplicates
             var SemesterYearsDistinct = SemesterYears.Distinct(new SemesterYearComparer());
@@ -223,6 +185,11 @@ namespace ListManager
             var ClassesDistinct = Classes.Distinct(new ClassHelperComparer());
             var TeachersDistinct = Teachers.Distinct(new TeacherComparer());
 
+            totalRecords = SemesterYearsDistinct.Count() + SemesterNamesDistinct.Count() + SemestersDistinct.Count() +
+                            EmailsDistinct.Count() + ContactsHelperDistinct.Count() + StudentsHelperDistinct.Count() +
+                            AccountsHelperDistinct.Count() + EnrollmentsDistinct.Count() + LocationsDistinct.Count() +
+                            ClassesDistinct.Count() + TeachersDistinct.Count();
+            i = 0;
             using (LisManagerADO db = new LisManagerADO())
             {
                 //Process SemesterYear
@@ -233,7 +200,9 @@ namespace ListManager
                     db.SemesterYears.AddIfNotExists(e, x => x.SemesterYearId == e.SemesterYearId);
                     //db.SemesterYears.Add(e);
                 }
-               db.SaveChanges();
+                db.SaveChanges();
+                i = i + SemesterYearsDistinct.Count();
+                worker.ReportProgress(Convert.ToInt32(Math.Round(i / totalRecords)));
 
                 //Process SemesterName
                 Debug.WriteLine("Number of items in the list: " + SemesterNamesDistinct.Count().ToString());
@@ -352,20 +321,7 @@ namespace ListManager
                     //db.SemesterYears.Add(sm);
                 }
                 db.SaveChanges();
-
-                Debug.WriteLine("Number of items in the list: " + SemesterYearsDistinct.Count().ToString());
-                /*
-                 var CSV = lines.Skip(1)
-                           .SelectMany(x => x)
-                           .Select((v, i) => new { Value = v, Index = i % lineLength })
-                           .Where(x => x.Index == 2 || x.Index == 3)
-                           .Select(x => x.Value);
-                foreach (var data in CSV)
-                {
-                    Console.WriteLine(data);
-                }*/
             }
-            return new List<int>();
         }
 
         private static CSVColumns SetCSVColumns(string[] firstRow)

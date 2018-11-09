@@ -16,6 +16,8 @@ namespace ListManager
         {
             InitializeComponent();
             textBoxFileName.Text = @"C:\Temp\EnrollmentsReport.csv";
+            backgroundWorker1.WorkerReportsProgress = true;
+            backgroundWorker1.WorkerSupportsCancellation = true;
         }
         private void buttonSelectFileList_Click(object sender, EventArgs e)
         {
@@ -34,22 +36,73 @@ namespace ListManager
                     //Get the path of specified file
                     filePath = openFileDialog.FileName;
                     textBoxFileName.Text = filePath;
-
-                    //Read the contents of the file into a stream
-                    //var fileStream = openFileDialog.OpenFile();
-
-                    //using (StreamReader reader = new StreamReader(fileStream))
-                    //{
-                    //    fileContent = reader.ReadToEnd();
-                    //}
                 }
             }
 
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void buttonUpload_Click(object sender, EventArgs e)
         {
-            FileOperations.ReadYears2(textBoxFileName.Text);
+           // FileOperations.UploadFile(textBoxFileName.Text);
+        }
+
+        private void startAsyncButton_Click(object sender, EventArgs e)
+        {
+            progressBar.Maximum = 100;
+            progressBar.Step = 1;
+            progressBar.Value = 0;
+
+            if (backgroundWorker1.IsBusy != true)
+            {
+                resultLabel.Text = "0%";
+                // Start the asynchronous operation.
+                backgroundWorker1.RunWorkerAsync();
+            }
+
+        }
+
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            BackgroundWorker worker = sender as BackgroundWorker;
+            FileOperations.UploadFile(textBoxFileName.Text, worker);
+           /* for (int i = 1; i <= 10; i++)
+            {
+                if (worker.CancellationPending == true)
+                {
+                    e.Cancel = true;
+                    break;
+                }
+                else
+                {
+                    // Perform a time consuming operation and report progress.
+                    System.Threading.Thread.Sleep(500);
+                    worker.ReportProgress(i * 10);
+                }
+            }*/
+        }
+
+        // This event handler updates the progress.
+        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            resultLabel.Text = ((e.ProgressPercentage * 100).ToString() + "%");
+            progressBar.Value = e.ProgressPercentage;
+        }
+
+        // This event handler deals with the results of the background operation.
+        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            if (e.Cancelled == true)
+            {
+                resultLabel.Text = "Canceled!";
+            }
+            else if (e.Error != null)
+            {
+                resultLabel.Text = "Error: " + e.Error.Message;
+            }
+            else
+            {
+                resultLabel.Text = "Done!";
+            }
         }
     }
 }
